@@ -1,0 +1,69 @@
+#!/usr/bin/env node
+
+var program = require('commander')
+  , mkdirp = require('mkdirp')
+  , async = require('async')
+  , fs = require('fs')
+  , writeFile = fs.writeFile
+  , lstat = fs.lstat
+  , readFile = fs.readFile
+  , path = require('path')
+  , extname = path.extname
+  , dirname = path.dirname
+  , basename = path.basename
+  , resolve = path.resolve
+  , jsCat = require('../')
+  , defaults = require('../lib/defaults')
+  ;
+
+program
+  .version(jsCat.version)
+  .usage('[options] [dir|file ...]')
+  //.option('-O, --option <path>', 'specify js-concat option path')
+  .option('-o, --out <path>', 'excute writeFile to given path')
+  //.option('-c, --compress', 'cat with default comperssor')
+  //.option('-j, --join <string>', 'cat files joinging with given string')
+  //.option('--each <js-path>', 'excute javascript to each file')
+  //.option('-bw, --beforewrite <js-path>', 'excute javascript ')
+  //.option('--bs', '')
+  
+  ;
+
+program.parse(process.argv);
+
+// left-over args are file paths
+var filePaths = program.args;
+if (!filePaths.length) {
+  // TODO show help
+  console.log('no argument');
+  return;
+}
+
+console.log('filePaths : ' + filePaths);
+
+async.filter(filePaths, function (filePath, callback) {
+  var stats = fs.lstatSync(filePath);
+  return callback(stats.isFile());
+}, readFiles);
+
+function readFiles (files) {
+  async.map(files, readFile, function (err, results) {
+    if(err) throw err;
+    //console.log('results : ' + results.join());
+    if(program.out) {
+      var outPath = resolve(program.out)
+        , dir = dirname(outPath)
+        ;
+      console.log('dir : ' + dir);
+      mkdirp(dir, 0755, function(err) {
+        if(err) throw err;
+        writeFile(outPath, results.join('\n\n====\n\n'), function(err) {
+          if(err) throw err;
+          console.log('write file : ' + outPath);
+        });
+      });
+    } else {
+      console.log('results : ' + results);
+    }
+  });
+}

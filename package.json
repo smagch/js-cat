@@ -1,0 +1,24 @@
+{
+  "author": "smagch <smagch@gmail.com> (https://github.com/smagch/)",
+  "name": "js-cat",
+  "description": "cat cli by node",
+  "version": "0.0.0",
+  "homepage": "https://github.com/smagch/js-cat",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/smagch/js-cat.git"
+  },
+  "main": "index",
+  "bin": "./bin/jscat",
+  "dependencies": {
+    "commander": "0.6.x",
+    "async": "0.1.x",
+    "mkdirp": "0.3.x"
+  },
+  "preferGlobal": true,
+  "devDependencies": {},
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}
