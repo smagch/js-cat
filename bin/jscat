@@ -45,22 +45,21 @@ console.log('filePaths : ' + filePaths);
 
 async.waterfall([
   // make sure file is no directory
-  function (callback) {
+  function (next) {
     async.filter(filePaths, function (filePath, callback) {
       var stats = fs.lstatSync(filePath);
       return callback(stats.isFile());
-    }, callback.bind(null, null));// bind context null with error null
+    }, next.bind(null, null));// bind context null with error null
   }
   // read files
-, function (files, callback) {
-    async.map(files, function (filePath, next) {
+, function (files, next) {
+    async.map(files, function (filePath, callback) {
       readFile(filePath, function (err, content) {
-        if(err) throw err;
-        next(null, content);
+        if(err) return callback(err, null);
+        callback(null, content);
       });
-    }, callback);
+    }, next);
   }
-
   // if no output, log and exit
   // if output, excute writeFile
 ], function (err, results) {
@@ -77,15 +76,15 @@ async.waterfall([
 function writeFile (outPath, files) {
   async.waterfall([
     // mkdirp
-    function (files, callback) {
+    function (files, next) {
       mkdirp(dirname(outPath), 0755, function (err) {
-        callback(err, files);
+        next(err, files);
       });
     }
     // writeFile
-  , function(files, callback) {
+  , function(files, next) {
       writeFile(outPath, results.join('\n'), function(err) {
-        callback(err);
+        next(err);
       });
     }
   ], function (err) {
