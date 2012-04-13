@@ -12,22 +12,24 @@ var program = require('commander')
   , dirname = path.dirname
   , basename = path.basename
   , resolve = path.resolve
-  , jsCat = require('../')
+  , jscat = require('../')
   , defaults = require('../lib/defaults')
   ;
 
+// jscat *.js --flag development
 program
-  .version(jsCat.version)
+  .version(jscat.version)
   .usage('[options] [dir|file ...]')
   //.option('-O, --option <path>', 'specify js-concat option path')
   .option('-o, --out <path>', 'excute writeFile to given path')
   //.option('-n, --no-option', 'excute with no option')
   .option('-c, --compress', 'cat with default comperssor')
+  //.options('-f, --flag <flags> , 'custom flag')
+  //.option('-v --verbose', 'verbose log')
   //.option('-j, --join <string>', 'cat files joinging with given string')
   //.option('--each <js-path>', 'excute javascript to each file')
   //.option('-bw, --beforewrite <js-path>', 'excute javascript ')
   //.option('--bs', '')
-  
   ;
 
 
@@ -60,6 +62,12 @@ async.waterfall([
       });
     }, next);
   }
+  // fire each event
+, function (files, next) {
+    async.map(files, function (content, callback) {
+      jscat.fire('each', content, callback);
+    }, next);
+  }
   // if no output, log and exit
   // if output, excute writeFile
 ], function (err, results) {
@@ -72,7 +80,6 @@ async.waterfall([
   }
 });
 
-
 function writeFile (outPath, files) {
   async.waterfall([
     // mkdirp
@@ -82,7 +89,7 @@ function writeFile (outPath, files) {
       });
     }
     // writeFile
-  , function(files, next) {
+  , function (files, next) {
       writeFile(outPath, results.join('\n'), function(err) {
         next(err);
       });
