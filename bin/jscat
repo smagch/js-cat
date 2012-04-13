@@ -43,28 +43,66 @@ if (!filePaths.length) {
 
 console.log('filePaths : ' + filePaths);
 
-async.filter(filePaths, function (filePath, callback) {
-  var stats = fs.lstatSync(filePath);
-  return callback(stats.isFile());
-}, readFiles);
+// async.filter(filePaths, function (filePath, callback) {
+//   var stats = fs.lstatSync(filePath);
+//   return callback(stats.isFile());
+// }, readFiles);
 
-function readFiles (files) {
-  async.map(files, readFile, function (err, results) {
-    if(err) throw err;
-    if(program.out) {
-      var outPath = resolve(program.out)
-        , dir = dirname(outPath)
-        ;
-      console.log('dir : ' + dir);
-      mkdirp(dir, 0755, function(err) {
+async.waterfall([
+  // make sure file is no directory
+  function (callback) {
+    async.filter(filePaths, function (filePath, callback) {
+      var stats = fs.lstatSync(filePath);
+      return callback(stats.isFile());
+    }, callback.bind(null, null));// bind context null with error null
+  }
+  // read files
+, function (files, callback) {
+    async.map(files, function (filePath, next) {
+      readFile(filePath, function (err, content) {
         if(err) throw err;
-        writeFile(outPath, results.join('\n\n====\n\n'), function(err) {
-          if(err) throw err;
-          console.log('write file : ' + outPath);
-        });
+        next(null, content);
       });
-    } else {
-      console.log('results : ' + results);
+    }, callback);
+  }
+  // if --out option, mkdirp
+, function (files, callback) {
+    if(!program.out) {
+      return callback(null, files);
     }
-  });
-}
+    var outPath = resolve(program.out)
+      , dir = dirname(outPath)
+      ;
+    console.log('dir : ' + dir);
+    mkdirp(dir, 0755, function (err) {
+      callback(err, files);
+    });
+  }
+  // output to path
+], function (err, results) {
+  if(err) throw err;
+  console.log('results : ' + results);
+});
+
+
+// 
+// function readFiles (files) {
+//   async.map(files, readFile, function (err, results) {
+//     if(err) throw err;
+//     if(program.out) {
+//       var outPath = resolve(program.out)
+//         , dir = dirname(outPath)
+//         ;
+//       console.log('dir : ' + dir);
+//       mkdirp(dir, 0755, function(err) {
+//         if(err) throw err;
+//         writeFile(outPath, results.join('\n\n====\n\n'), function(err) {
+//           if(err) throw err;
+//           console.log('write file : ' + outPath);
+//         });
+//       });
+//     } else {
+//       console.log('results : ' + results);
+//     }
+//   });
+// }
