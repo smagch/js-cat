@@ -4,7 +4,6 @@ var program = require('commander')
   , mkdirp = require('mkdirp')
   , async = require('async')
   , fs = require('fs')
-  , writeFile = fs.writeFile
   , lstat = fs.lstat
   , readFile = fs.readFile
   , path = require('path')
@@ -83,16 +82,12 @@ async.waterfall([
 function writeFile (outPath, files) {
   async.waterfall([
     // mkdirp
-    function (files, next) {
-      mkdirp(dirname(outPath), 0755, function (err) {
-        next(err, files);
-      });
+    function (next) {
+      mkdirp(dirname(outPath), 0755, next);
     }
     // writeFile
-  , function (files, next) {
-      writeFile(outPath, results.join('\n'), function(err) {
-        next(err);
-      });
+  , function (next) {
+      fs.writeFile(outPath, files.join('\n'), next);
     }
   ], function (err) {
     if(err) throw err;
