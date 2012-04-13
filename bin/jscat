@@ -1,42 +1,35 @@
 #!/usr/bin/env node
 
 var program = require('commander')
-  , mkdirp = require('mkdirp')
   , async = require('async')
   , fs = require('fs')
-  , lstat = fs.lstat
-  , readFile = fs.readFile
-  , path = require('path')
-  , extname = path.extname
-  , dirname = path.dirname
-  , basename = path.basename
-  , resolve = path.resolve
-  , jscat = require('../')
+  , resolve = require('path').resolve
   , defaults = require('../lib/defaults')
+  , writeTo = require('../lib/util').writeTo
+  , JscatEvent = require('../lib/jscat-event')
+  , jscat = new JscatEvent(defaults)
   ;
 
 // jscat *.js --flag development
 program
-  .version(jscat.version)
+  .version('0.0.0')
   .usage('[options] [dir|file ...]')
   //.option('-O, --option <path>', 'specify js-concat option path')
   .option('-o, --out <path>', 'excute writeFile to given path')
   //.option('-n, --no-option', 'excute with no option')
-//  .option('-c, --compress', 'cat with default comperssor')
   .option('-n, --namespace <namespace>', 'add custom namespace')
-  .option('-v --verbose', 'verbose log')
+  .option('-v --verbose', 'verbose logging')
   //.option('-j, --join <string>', 'cat files joinging with given string')
   //.option('--each <js-path>', 'excute javascript to each file')
   //.option('-bw, --beforewrite <js-path>', 'excute javascript ')
   //.option('--bs', '')
   ;
 
-
 program.parse(process.argv);
 
 var log = program.verbose
-        ? console.log
-        : function() {};
+        ? console.error
+        : function () {};
 
 var filePaths = program.args;
 if (!filePaths.length) {
@@ -47,60 +40,45 @@ if (!filePaths.length) {
 
 var ns = program.namespace;
 // add namespace
-if(ns) jscat.namespace(ns);
-
-console.log('filePaths : ' + filePaths);
+if (ns) jscat.namespace(ns);
 
 async.waterfall([
-  // make sure file is no directory
+  // make sure file is not a directory
   function (next) {
     async.filter(filePaths, function (filePath, callback) {
       var stats = fs.lstatSync(filePath);
       return callback(stats.isFile());
     }, next.bind(null, null));// bind context null with error null
   }
-  // read files
-, function (filesPaths, next) {
-    async.map(filesPaths, function (filePath, callback) {
-      readFile(filePath, function (err, content) {
-        if(err) return callback(err, null);
-        callback(null, {
-          path: filePath
-        , content: content
-        });
-      });
+  // fire "read" event
+, function (paths, next) {
+    async.map(paths, function (filePath, callback) {
+      jscat.fireRead(filePath, callback);
     }, next);
   }
-  // fire each event
+  // fire "each" event
 , function (fileObjs, next) {
     async.map(fileObjs, function (fileObj, callback) {
-      jscat.fire('each', fileObj, callback);
+      jscat.fireEach(fileObj, callback);
     }, next);
+  }
+  // fire "join" event
+, function (results, next) {
+    jscat.fireJoin(results, next);
   }
   // if no output, log and exit
   // if output, excute writeFile
-], function (err, results) {
-  if(err) throw err;
-  if(!program.out) {
-    console.log(results.join('\n'));
+], function (err, result) {
+  if (err) throw err;
+
+  if (!program.out) {
+    console.log(result);
     process.exit(0);
   } else {
-    writeFile(resolve(program.out), results);
+    var outPath = resolve(program.out);
+    writeTo(outPath, result, function (err) {
+      if (err) throw err;
+      log(filePaths.join(',') + ' > ' + outPath);
+    });
   }
 });
-
-function writeFile (outPath, files) {
-  async.waterfall([
-    // mkdirp
-    function (next) {
-      mkdirp(dirname(outPath), 0755, next);
-    }
-    // writeFile
-  , function (next) {
-      fs.writeFile(outPath, files.join('\n'), next);
-    }
-  ], function (err) {
-    if(err) throw err;
-    log('write file to ' + outPath);
-  });
-}
