@@ -43,11 +43,6 @@ if (!filePaths.length) {
 
 console.log('filePaths : ' + filePaths);
 
-// async.filter(filePaths, function (filePath, callback) {
-//   var stats = fs.lstatSync(filePath);
-//   return callback(stats.isFile());
-// }, readFiles);
-
 async.waterfall([
   // make sure file is no directory
   function (callback) {
@@ -65,44 +60,36 @@ async.waterfall([
       });
     }, callback);
   }
-  // if --out option, mkdirp
-, function (files, callback) {
-    if(!program.out) {
-      return callback(null, files);
-    }
-    var outPath = resolve(program.out)
-      , dir = dirname(outPath)
-      ;
-    console.log('dir : ' + dir);
-    mkdirp(dir, 0755, function (err) {
-      callback(err, files);
-    });
-  }
-  // output to path
+
+  // if no output, log and exit
+  // if output, excute writeFile
 ], function (err, results) {
   if(err) throw err;
-  console.log('results : ' + results);
+  if(!program.out) {
+    console.log(results.join('\n'));
+    process.exit(0);
+  } else {
+    writeFile(resolve(program.out), results);
+  }
 });
 
 
-// 
-// function readFiles (files) {
-//   async.map(files, readFile, function (err, results) {
-//     if(err) throw err;
-//     if(program.out) {
-//       var outPath = resolve(program.out)
-//         , dir = dirname(outPath)
-//         ;
-//       console.log('dir : ' + dir);
-//       mkdirp(dir, 0755, function(err) {
-//         if(err) throw err;
-//         writeFile(outPath, results.join('\n\n====\n\n'), function(err) {
-//           if(err) throw err;
-//           console.log('write file : ' + outPath);
-//         });
-//       });
-//     } else {
-//       console.log('results : ' + results);
-//     }
-//   });
-// }
+function writeFile (outPath, files) {
+  async.waterfall([
+    // mkdirp
+    function (files, callback) {
+      mkdirp(dirname(outPath), 0755, function (err) {
+        callback(err, files);
+      });
+    }
+    // writeFile
+  , function(files, callback) {
+      writeFile(outPath, results.join('\n'), function(err) {
+        callback(err);
+      });
+    }
+  ], function (err) {
+    if(err) throw err;
+    console.log('complete');
+  });
+}
