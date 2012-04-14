@@ -48,6 +48,12 @@ if (!filePaths.length) {
 var ns = program.namespace;
 if (ns) jscat.namespace(ns);
 
+// add outPath
+if (program.out) {
+  var outPath = resolve(program.out);
+  jscat.outPath(outPath);
+}
+
 async.waterfall([
   // make sure file is not a directory
   function (next) {
