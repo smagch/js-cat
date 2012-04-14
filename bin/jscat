@@ -5,12 +5,12 @@ var program = require('commander')
   , fs = require('fs')
   , resolve = require('path').resolve
   , writeTo = require('../lib/util').writeTo
-  , JscatEvent = require('../lib/jscat-event')
+  , Jscat = require('..')
   , jscat
 ;
 
 program
-  .version('0.0.0')
+  .version(Jscat.version)
   .usage('[options] [dir|file|namespace ...]')
   .option('-c, --config <path>', 'specify js-concat config path')
   .option('-o, --out <path>', 'excute writeFile to given path')
@@ -28,12 +28,12 @@ var log = program.verbose
 
 // resolve config source
 if (!program.src) {
-  jscat = new JscatEvent();
+  jscat = new Jscat();
 } else if (program.config) {
   var path = resolve(program.config);
-  jscat = new JscatEvent(require(path));
+  jscat = new Jscat(require(path));
 } else {
-  jscat = new JscatEvent(require('../lib/defaults'));
+  jscat = new Jscat(require('../lib/defaults'));
 }
 
 // remaining arg is the path of target files
