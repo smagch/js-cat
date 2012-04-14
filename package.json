@@ -2,7 +2,8 @@
   "author": "smagch <smagch@gmail.com> (https://github.com/smagch/)",
   "name": "jscat",
   "description": "cat cli by node",
-  "version": "0.0.0",
+  "version": "0.0.1",
+  "keywords": ["cat", "concat", "cli", "command", "concatenate", "concatenation"],
   "homepage": "https://github.com/smagch/js-cat",
   "repository": {
     "type": "git",
@@ -12,6 +13,12 @@
   "bin": {
     "jscat": "./bin/jscat"
   },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://raw.github.com/smagch/js-cat/master/LICENSE"
+    }
+  ],
   "dependencies": {
     "commander": "0.6.x",
     "async": "0.1.x",
@@ -21,6 +28,6 @@
   "devDependencies": {},
   "optionalDependencies": {},
   "engines": {
-    "node": "*"
+    "node": ">= 0.4.x < 0.7.0"
   }
 }

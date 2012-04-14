@@ -1,0 +1,349 @@
+<h1>js-cat, cat CLI powered by nodejs.</h1>
+<p>js-cat is easily customizable cat.
+
+</p>
+<h2>Install</h2>
+<p>install with <a href="http://npmjs.org/">npm</a>
+
+</p>
+<p><code>
+npm install -g jscat
+</code>
+
+</p>
+<h2>Usage</h2>
+<p>jscat works like unix cat.
+
+</p>
+<p><code>
+jscat *.js
+</code>
+
+</p>
+<p>following two commands concatenate javascripts of current directory to <code>all.js</code>
+
+</p>
+<p><code>
+jscat *.js &gt; all.js
+</code>
+
+</p>
+<p>or
+
+</p>
+<p><code>
+jscat *.js --out all.js
+</code>
+
+</p>
+<h3>Execute with Namespace</h3>
+<p>assuming you have already installed <code>uglifyjs</code> globally, the next command will yield compressed javascripts.
+
+</p>
+<p><code>
+jscat -n compress *.js
+</code>
+
+</p>
+<p>if you don&#39;t installed uglify-js
+
+</p>
+<p><code>
+npm install -g uglify-js
+</code>
+
+</p>
+<h3>What&#39;s happening with namespace?</h3>
+<p>Jscat has three process, <code>read</code>, <code>each</code>, <code>join</code>.
+Each event has extension and namespace scope.
+The following code is the default Event hook implementation.
+
+</p>
+<p>```
+var exec = require(&#39;child_process&#39;).exec;
+
+</p>
+<p>exports[&#39;read.js:compress&#39;] = function (srcPath, next) {
+  // balk if srcPath is like *min.js
+  if (/min.js$/.test(srcPath)) return next();
+  exec(&#39;uglifyjs &#39; + srcPath, next);
+};
+```
+
+</p>
+<p>For more details, see next section.
+
+</p>
+<h2>Events</h2>
+<p>All event call is done asynchronously. You have to call callback rather than return value.
+
+</p>
+<h3>&quot;read&quot; (filePath, callback)</h3>
+<p>read event is basically called once. But when callback is called with no arguments,
+next matched events will be called.
+
+</p>
+<p>Arguments
+<em> filePath {String}
+</em> callback {Function} (err, fileContent)
+
+</p>
+<h3>&quot;each&quot; (data, callback)</h3>
+<p>each event is called recursively unless you set truthy value in third argument <code>stop</code>
+Arguments
+
+</p>
+<ul>
+<li>data {Object}</li>
+<li>callback {Function} (err, fileContent, stop)</li>
+</ul>
+<p><code>
+data = {
+  path: {String}
+  content: {Buffer}
+};
+</code>
+
+</p>
+<h3>&quot;join&quot; (dataArray, callback)</h3>
+<p>Arguments
+
+</p>
+<ul>
+<li>files {Array}</li>
+<li>callback {Function} (err, fileContent)</li>
+</ul>
+<p><code>
+dataArray = [
+  {
+    path: {String},
+    content: {Buffer}
+  },
+  {
+    path: {String},
+    content: {Buffer}
+  }
+  ...
+];
+</code>
+</p>
+<h3>Events Extension</h3>
+<p>Simply, file extension is applied. 
+
+</p>
+<ul>
+<li><code>read.js</code> will listen javascript&#39;s read event.</li>
+<li><code>each.css</code> will listen css&#39;s each event.</li>
+<li><code>join.html</code> will listen html&#39;s join event.</li>
+</ul>
+<p>unlike <code>read</code> and <code>each</code>, <code>join</code>&#39;s extension is only available when you set <code>--out, -o</code>.
+See Note section for details.
+
+</p>
+<h3>Events Namespace</h3>
+<p>You can define your own event namespace. Make sure namespace should be followed by extension.
+
+</p>
+<ul>
+<li><code>read.js:production</code> : this is legal. </li>
+<li><code>read:production.js</code> : this is illegal.</li>
+</ul>
+<h3>Order of priority</h3>
+<ol>
+<li>[key][.ext][:namespace]</li>
+<li>[key][.ext][:namespace]</li>
+<li>[key][:namespace]</li>
+<li>[key]</li>
+</ol>
+<h2>Example</h2>
+<p>The following events hook is do nothing especially.
+
+</p>
+<p>```
+exports[&#39;read&#39;] = function (srcPath, next) {
+  // Balk hook event with no argument.
+  next();
+};
+
+</p>
+<p>// make sure you return <code>data.content</code>, not <code>data</code>
+exports[&#39;each&#39;] = function (data, callback, stop) {
+  callback(null, data.content);
+};
+
+</p>
+<p>// You cannot balk join event
+exports[&#39;join&#39;] = function (dataArray, next) {
+  var files = dataArray.map(function (data) {
+    return data.content;
+  });
+  next(null, files.join(&#39;\n&#39;));
+};
+```
+
+</p>
+<p>You may want to implement your own event hook. 
+
+</p>
+<p>```
+
+</p>
+<p>exports[&#39;each.js:compress&#39;] = function (data, callback) {
+  var jsp = require(&quot;uglify-js&quot;).parser;
+  var pro = require(&quot;uglify-js&quot;).uglify;
+  // your own uglify implementation
+  callback(null, content);
+};
+
+</p>
+<p>```
+
+</p>
+<h2>Command-line API</h2>
+<p><code>jscat --help</code> to see help
+
+</p>
+<p>```
+
+</p>
+<p>Usage: jscat [options] [dir|file|namespace ...]
+
+</p>
+<p>Options:
+
+</p>
+<p>  -h, --help                   output usage information
+  -V, --version                output the version number
+  -h, --hook <path>            specify event hook source path
+  -o, --out <path>             excute writeFile to path
+  -n, --namespace <namespace>  add namespace
+  -N, --no-src                 excute with no hook including default hook
+  -v, --verbose                verbose logging
+
+
+</p>
+<p>```
+
+</p>
+<h2>Background</h2>
+<p>There are Jakefile, gruntfile, Cakefile out there. I just wanted to keep simple with Makefile. But I couldn&#39;t write smart Makefile because I am a absolute nooooob. This module is outcome of the background.
+
+</p>
+<h2>Notes</h2>
+<h3>Difference between shell redirection and <code>-o, --out</code></h3>
+<p>You cannot listen join&#39;s extension event when you use redirection.
+Let&#39;s say you define join event hook like following.
+
+</p>
+<p>```javascript
+
+</p>
+<p>exports[&#39;join.js&#39;] = function (dataArray, next) {
+  var files = dataArray.map(function (data) {
+    return data.content;
+  });
+  next(null, &#39;This is custom join \n&#39; + files.join(&#39;;\n\n\n&#39;));
+};
+
+</p>
+<p>exports[&#39;join&#39;] = function (dataArray, next) {
+  var files = dataArray.map(function (data) {
+    return data.content;
+  });
+  next(null, &#39;yet another custom join&#39; + files.join(&#39;\n\n\n\n=============\n\n\n\n&#39;));
+};
+
+</p>
+<p>```
+
+</p>
+<p>The first hook won&#39;t be called. Instead, the second hook will be called.
+
+</p>
+<p><code>
+jscat foo.js bar.js
+jscat foo.js bar.js &gt; all.js
+</code>
+
+</p>
+<p>The second hook will be called when you specify <code>--out</code> or <code>-o</code>.
+
+</p>
+<p><code>
+jscat foo.js bar.js --out all.js
+</code>
+
+
+</p>
+<h3>Avoid <code>console.log</code></h3>
+<p>use <code>console.error</code> when you log your config. Otherwise you&#39;ll end up with a hilarious situation.
+
+</p>
+<p><code>javascript
+exports[&#39;each.js&#39;] = function (data, next) {
+  console.log(&#39;I am debbuging!!&#39;);
+  // do some work
+  var content = ...;
+  next(null, content);
+};
+</code>
+
+</p>
+<p>```
+jscat ./src/*.js &gt; ./my-lib-built.js
+
+</p>
+<p>cat my-lib-built.js
+...
+~
+I an debugging!!
+~
+...
+```
+
+
+</p>
+<h2>Contribute</h2>
+<p>Implementation is quite simple with <a href="https://github.com/caolan/async">async</a> and <a href="https://github.com/visionmedia/commander.js">commander</a>. Feel free to do pull request or suggestion.
+
+
+</p>
+<h3>syntax</h3>
+<p>To test code syntax, make sure you install <a href="https://github.com/jshint/node-jshint">jshint</a> globally.
+<code>
+npm install -g jshint
+</code>
+
+</p>
+<p><code>
+make jshint
+</code>
+
+</p>
+<h3>test</h3>
+<p>TODO
+
+</p>
+<h2>TODO</h2>
+<ul>
+<li>example</li>
+<li>middleware</li>
+<li>test script</li>
+<li>multi namespace: how to do syntax??</li>
+</ul>
+<h2>License</h2>
+<p>(The MIT License)
+
+</p>
+<p>Copyright (C) 2012 Shimaguchi Tomoya
+
+</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the &quot;Software&quot;), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+</p>
+<p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+</p>
+<p>THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+</p>
+
