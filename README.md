@@ -69,9 +69,10 @@ All event call is done asynchronously. You have to call callback rather than ret
 ### "read" (filePath, callback)
 
 read event is basically called once. But when callback is called with no arguments,
-next matched events will be called.
+next matched event will be called.
 
 Arguments
+
 * filePath {String}
 * callback {Function} (err, fileContent)
 
@@ -194,16 +195,12 @@ Options:
 
 ```
 
-## Background
-
-There are Jakefile, gruntfile, Cakefile out there. I just wanted to keep simple with Makefile. But I couldn't write smart Makefile because I am a absolute nooooob. This module is outcome of the background.
-
 ## Notes
 
 ### Difference between shell redirection and `-o, --out`
 
 You cannot listen join's extension event when you use redirection.
-Let's say you define join event hook like following.
+Let's say you define join event hooks like following.
 
 ```javascript
 
@@ -230,7 +227,7 @@ jscat foo.js bar.js
 jscat foo.js bar.js > all.js
 ```
 
-The second hook will be called when you specify `--out` or `-o`.
+The first hook will be called when you specify `--out` or `-o`.
 
 ```
 jscat foo.js bar.js --out all.js
@@ -254,11 +251,9 @@ exports['each.js'] = function (data, next) {
 jscat ./src/*.js > ./my-lib-built.js
 
 cat my-lib-built.js
-...
-~
+~~~~~
 I an debugging!!
-~
-...
+~~~~~
 ```
 
 
