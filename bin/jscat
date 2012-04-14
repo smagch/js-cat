@@ -4,33 +4,39 @@ var program = require('commander')
   , async = require('async')
   , fs = require('fs')
   , resolve = require('path').resolve
-  , defaults = require('../lib/defaults')
   , writeTo = require('../lib/util').writeTo
   , JscatEvent = require('../lib/jscat-event')
-  , jscat = new JscatEvent(defaults)
-  ;
+  , jscat
+;
 
-// jscat *.js --flag development
 program
   .version('0.0.0')
-  .usage('[options] [dir|file ...]')
-  //.option('-O, --option <path>', 'specify js-concat option path')
+  .usage('[options] [dir|file|namespace ...]')
+  .option('-c, --config <path>', 'specify js-concat config path')
   .option('-o, --out <path>', 'excute writeFile to given path')
-  //.option('-n, --no-option', 'excute with no option')
   .option('-n, --namespace <namespace>', 'add custom namespace')
-  .option('-v --verbose', 'verbose logging')
-  //.option('-j, --join <string>', 'cat files joinging with given string')
-  //.option('--each <js-path>', 'excute javascript to each file')
-  //.option('-bw, --beforewrite <js-path>', 'excute javascript ')
-  //.option('--bs', '')
-  ;
+  .option('-N, --no-src', 'excute with no config including default config')
+  .option('-v, --verbose', 'verbose logging')
+;
 
 program.parse(process.argv);
 
+// logger setting
 var log = program.verbose
         ? console.error
         : function () {};
 
+// resolve config source
+if (!program.src) {
+  jscat = new JscatEvent();
+} else if (program.config) {
+  var path = resolve(program.config);
+  jscat = new JscatEvent(require(path));
+} else {
+  jscat = new JscatEvent(require('../lib/defaults'));
+}
+
+// remaining arg is the path of target files
 var filePaths = program.args;
 if (!filePaths.length) {
   console.log(program.helpInformation());
@@ -38,8 +44,8 @@ if (!filePaths.length) {
   process.exit(0);
 }
 
-var ns = program.namespace;
 // add namespace
+var ns = program.namespace;
 if (ns) jscat.namespace(ns);
 
 async.waterfall([
@@ -66,15 +72,14 @@ async.waterfall([
 , function (results, next) {
     jscat.fireJoin(results, next);
   }
-  // if no output, log and exit
-  // if output, excute writeFile
 ], function (err, result) {
   if (err) throw err;
-
   if (!program.out) {
+    // if no output, log and exit
     console.log(result);
     process.exit(0);
   } else {
+    // if output, excute writeFile
     var outPath = resolve(program.out);
     writeTo(outPath, result, function (err) {
       if (err) throw err;
