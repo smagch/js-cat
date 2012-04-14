@@ -251,9 +251,9 @@ exports['each.js'] = function (data, next) {
 jscat ./src/*.js > ./my-lib-built.js
 
 cat my-lib-built.js
-~~~~~
+~
 I an debugging!!
-~~~~~
+~
 ```
 
 
