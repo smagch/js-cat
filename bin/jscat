@@ -63,14 +63,14 @@ async.waterfall([
     }, next);
   }
   // fire "each" event
-, function (fileObjs, next) {
-    async.map(fileObjs, function (fileObj, callback) {
-      jscat.fireEach(fileObj, callback);
+, function (dataArray, next) {
+    async.map(dataArray, function (data, callback) {
+      jscat.fireEach(data, callback);
     }, next);
   }
   // fire "join" event
-, function (results, next) {
-    jscat.fireJoin(results, next);
+, function (dataArray, next) {
+    jscat.fireJoin(dataArray, next);
   }
 ], function (err, result) {
   if (err) throw err;
