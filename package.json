@@ -2,7 +2,7 @@
   "author": "smagch <smagch@gmail.com> (https://github.com/smagch/)",
   "name": "jscat",
   "description": "cat cli by node",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "keywords": ["cat", "concat", "cli", "command", "concatenate", "concatenation"],
   "homepage": "https://github.com/smagch/js-cat",
   "repository": {
